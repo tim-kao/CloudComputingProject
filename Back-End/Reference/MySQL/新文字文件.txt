@@ -1,0 +1,30 @@
+
+create table reddit
+(
+	id varchar(120) not null,
+	full_link text,
+	author_fullname varchar(320) not null,
+	title text,
+	num_comments int,
+	score int,
+	url text,
+	keyword varchar(120) not null,
+	text_len smallint,
+	post_time datetime,
+	sentiment_overall varchar(10),
+	sentimentScore_Positive float,
+	sentimentScore_Negative float,
+	sentimentScore_Neutral float,
+	sentimentScore_Mixed float,
+	emotion_Happy float,
+	emotion_Angry float,
+	emotion_Surprise float,
+	emotion_Sad float,
+	emotion_Fear float,
+	constraint FantasyManager_pk
+		primary key (id)
+);
+
+insert into reddit values ('ls3rl7', 'https://www.reddit.com/r/apple/comments/ls3rl7/valve_ordered_to_give_apple_information_on_436/', 't2_15nwds', 'Valve Ordered to Give Apple Information on 436 Steam Games As Part of Epic Games Legal Case', 2528, 5883, 'https://www.macrumors.com/2021/02/25/valve-apple-data-request-for-epic-games-case/', 'apple', 92, '2021-02-26T21:14:28', 'NEUTRAL', 0.0032199721317738295, 0.00020853821479249746, 0.9965662956237793, 5.123021310282638e-06, 0.0, 0.5, 0.0, 0.0, 0.5);
+
+Truncate table reddit;
