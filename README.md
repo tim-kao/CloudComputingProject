@@ -4,7 +4,7 @@
 Architecture![image](https://github.com/tim-kao/CloudComputingProject/blob/main/snapshot/Cloud%20Computing%20Project.png)
 
 ## GoogleDoc ##
-Doc![link](https://docs.google.com/document/d/1gXInC-6Qhd7_PIMrfa9pfa3rOAB2pv5xE9oXymQG6Uc/edit)
+[Doc](https://docs.google.com/document/d/1gXInC-6Qhd7_PIMrfa9pfa3rOAB2pv5xE9oXymQG6Uc/edit)
 
 ## Contributor ##
 #### [Tim Kao](https://github.com/tim-kao) (UNI: sk4920)
