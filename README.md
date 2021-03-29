@@ -1,6 +1,6 @@
 # CloudComputingProject
 
-## Architecture ##![image](https://github.com/tim-kao/CloudComputingProject/blob/main/snapshot/Cloud%20Computing%20Project.png)
+## Architecture![image](https://github.com/tim-kao/CloudComputingProject/blob/main/snapshot/Cloud%20Computing%20Project.png)
 
 ## GoogleDoc ##
 [Doc](https://docs.google.com/document/d/1gXInC-6Qhd7_PIMrfa9pfa3rOAB2pv5xE9oXymQG6Uc/edit)
