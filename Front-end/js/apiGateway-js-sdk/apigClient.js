@@ -53,7 +53,7 @@ apigClientFactory.newClient = function (config) {
 
     
     // extract endpoint and path from url
-    var invokeUrl = 'https://7pbnxs09f8.execute-api.us-east-1.amazonaws.com/v1';
+    var invokeUrl = 'https://7pbnxs09f8.execute-api.us-east-1.amazonaws.com/v2';
     var endpoint = /(^https?:\/\/[^\/]+)/g.exec(invokeUrl)[1];
     var pathComponent = invokeUrl.substring(endpoint.length);
 
@@ -86,18 +86,36 @@ apigClientFactory.newClient = function (config) {
     apigClient.userGet = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['body', 'q'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['body', 'unit', 'q', 'time'], ['body']);
         
         var userGetRequest = {
             verb: 'get'.toUpperCase(),
             path: pathComponent + uritemplate('/user').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
             headers: apiGateway.core.utils.parseParametersToObject(params, []),
-            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['q']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['unit', 'q', 'time']),
             body: body
         };
         
         
         return apiGatewayClient.makeRequest(userGetRequest, authType, additionalParams, config.apiKey);
+    };
+    
+    
+    apigClient.userPost = function (params, body, additionalParams) {
+        if(additionalParams === undefined) { additionalParams = {}; }
+        
+        apiGateway.core.utils.assertParametersDefined(params, [], ['body']);
+        
+        var userPostRequest = {
+            verb: 'post'.toUpperCase(),
+            path: pathComponent + uritemplate('/user').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
+            headers: apiGateway.core.utils.parseParametersToObject(params, []),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
+            body: body
+        };
+        
+        
+        return apiGatewayClient.makeRequest(userPostRequest, authType, additionalParams, config.apiKey);
     };
     
     
