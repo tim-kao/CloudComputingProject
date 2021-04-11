@@ -2,21 +2,57 @@
 var apigClient = apigClientFactory.newClient();
 
 // Search text in searchbar when search button pressed
+$(function() { 
+  $('#unitOptions').change(function() {
+    let timeOptions = document.getElementById('timeOptions');
+    timeOptions.innerHTML = "";
+    if ($(this).val() == 'm') {
+      let times = ['1', '3'];
+      for ( let i = 0; i < times.length; i++) {
+        let opt = document.createElement('option');
+        opt.innerHTML = times[i];
+        opt.value = times[i];
+        timeOptions.appendChild(opt);
+      }
+    }
+    else {
+      let times = ['5'];
+      for ( let i = 0; i < times.length; i++) {
+        let opt = document.createElement('option');
+        opt.innerHTML = times[i];
+        opt.value = times[i];
+        timeOptions.appendChild(opt);
+      }
+    }
+  }).change(); // Trigger the event
+});
+
 $('#searchbtn').click(function(){
   query = $('#searchbar').val();
-  params = {q: query};
+  timeNumber = $('#timeOptions').val();
+  unitVal = $('#unitOptions').val();
+  params = {q: query, unit: unitVal, time: timeNumber};
+  console.log(params)
   apigClient.userGet(params, {}, {})
     .then(function(result){
       // Add success callback code here.
       console.log("SUCCESS CALLBACK")
       console.log(result.data)
 
+      var elements = document.getElementsByClassName("subheader");
+      for (let i = 0; i < elements.length; i++ ) {
+        elements[i].style.display = "block";
+      }
+
       // popChart(result.data)
+      // popularity
       popChart(result.data[0], chartdiv0)
+      // sentiment
       popChart(result.data[1], chartdiv1)
       popChart(result.data[2], chartdiv2)
       popChart(result.data[3], chartdiv3)
       popChart(result.data[4], chartdiv4)
+      // emotion
       popChart(result.data[5], chartdiv5)
       popChart(result.data[6], chartdiv6)
       popChart(result.data[7], chartdiv7)
