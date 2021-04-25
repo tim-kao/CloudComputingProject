@@ -17,7 +17,7 @@ emotion_list = ['Happy', 'Angry', 'Surprise', 'Sad', 'Fear']
 subreddit_list = ['Trading', 'Daytrading', 'Forex', 'EliteTraders', 'finance', 'GlobalOffensiveTrade',
                   'stocks', 'StockMarket', 'algotrading', 'trading212', 'stock', 'invest', 'investing',
                   'wallstreetbets', 'personalfinance']
-# subreddit_list = ['wallstreetbets']
+# subreddit_list = ['trading212', 'stock', 'invest', 'investing']
 scrape_size = 100
 #subreddit_list = ['investing']
 # elasticsearch path
@@ -30,7 +30,7 @@ rds_host = 'cloudcomputingdb.cjzmmanfltlb.us-east-1.rds.amazonaws.com'
 rds_user = 'admin'
 rds_password = 'cloudcomputingteam14'
 region = 'us-east-1'
-social_media = 'reddit'
+social_media_schema = 'reddit'
 event_schema = 'event'
 record_table = 'commit'
 # comprehend
@@ -56,7 +56,6 @@ def fetchObjects(**kwargs):
         'sort': 'asc',
         'size': 1000
     }
-
     # Add additional paramters based on function arguments
     for key, value in kwargs.items():
         params[key] = value
@@ -76,7 +75,7 @@ def fetchObjects(**kwargs):
     return response
 
 
-def data_handler(response, rows, es_json, keyword):
+def data_handler(response, rows, es_json, keyword, comprehend_conn):
     data = json.loads(response.text)['data']
     for num, datum in enumerate(data):
         if data_qa(datum):
@@ -98,7 +97,7 @@ def data_handler(response, rows, es_json, keyword):
 
                 # Sentiment analysis
                 try:
-                    response_comprehend = sentiment_handler(article_text)
+                    response_comprehend = comprehend_conn.detect_sentiment(Text=article_text, LanguageCode='en')
                     row['sentiment_overall'] = response_comprehend['Sentiment']
                     row['sentimentScore_Positive'] = response_comprehend['SentimentScore']['Positive']
                     row['sentimentScore_Negative'] = response_comprehend['SentimentScore']['Negative']
@@ -133,54 +132,18 @@ def data_qa(data):
             return False
     return True
 
-# request through api
-def extract_reddit_data(**kwargs):
-    # Open a file for JSON output
-    # file = open('submissions.json', 'a')
-    rows = []
-    response = fetchObjects(**kwargs)
-    result = 0
-    if response.status_code == 200 and json.loads(response.text)['data']:
-        print('Find ', len(json.loads(response.text)['data']), 'articles to process')
-        es_json = data_handler(response, rows, '', kwargs['selftext'])
-        rds_handler(rows)
-        """
-        es_response = es_handler(es_json)
-        if es_response.status_code == 200:
-            print('Elasticsearch commitment succeeds')
-        else:
-            print('Elasticsearch commitment fails')
-        result = len(rows)
-        """
-    return result
-
 
 def get_timestamp(date_time_instance):
     return int(datetime.datetime.timestamp(date_time_instance))
 
+def rds_handler(rows, conn):
 
-def sentiment_handler(text):
-    client = boto3.client('comprehend')
-    response = client.detect_sentiment(
-        Text=text,
-        LanguageCode='en'
-    )
-    return response
-
-
-def rds_handler(rows):
-    conn = pymysql.connect(host=rds_host,
-                           user=rds_user,
-                           passwd=rds_password,
-                           db=social_media,
-                           connect_timeout=5,
-                           cursorclass=pymysql.cursors.DictCursor)
     with conn.cursor() as cur:
-        cur.execute('use ' + social_media + ';')
+        cur.execute('use ' + social_media_schema + ';')
         result = cur.fetchall()
         conn.commit()
         for row in rows:
-            sql = 'insert into ' + social_media + ' values ('
+            sql = 'insert into ' + social_media_schema + ' values ('
             for value in row.values():
                 if not isinstance(value, str):
                     sql += str(value) + ', '
@@ -195,56 +158,33 @@ def rds_handler(rows):
 
             except:
                 print("duplicate PK, update row")
-
         cur.close()
 
-#   obselete
-def es_handler(es_json, username=es_username, password=es_password, url=es_url):
-    # response = requests.post(es_url, auth=HTTPBasicAuth(username, password), json=json, headers=headers)
-    headers = {'Content-Type': 'application/json'}
-    endpoint = url + '/_bulk'
-    response = requests.post(endpoint, auth=(username, password), data=es_json, headers=headers)
-
-    return response
-
-
-def get_last_commit():
-    num, date_time = None, None
-    conn = pymysql.connect(host=rds_host,
-                           user=rds_user,
-                           passwd=rds_password,
-                           db=event_schema,
-                           connect_timeout=5,
-                           cursorclass=pymysql.cursors.DictCursor)
+def get_last_commit(conn):
+    date_time = None
     with conn.cursor() as cur:
         cur.execute('use ' + event_schema + ';')
         result = cur.fetchall()
         conn.commit()
-        sql = 'select * from ' + record_table + ' order by commit_id desc;'
+        sql = 'select commit_date from ' + record_table + ' where commit_id="' + social_media_schema + '";'
         try:
             cur.execute(sql)
             rows = cur.fetchall()
-            num = rows[0]['commit_id']
             date_time = rows[0]['commit_date']
         except:
             print("Retrieve fails")
         cur.close()
-        return num, date_time
+        return date_time
 
 
-def record_last_commit(num, timestamp):
+def record_last_commit(conn, timestamp):
     date_time = datetime.datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%S")
-    conn = pymysql.connect(host=rds_host,
-                           user=rds_user,
-                           passwd=rds_password,
-                           db=event_schema,
-                           connect_timeout=5,
-                           cursorclass=pymysql.cursors.DictCursor)
     with conn.cursor() as cur:
         cur.execute('use ' + event_schema + ';')
         result = cur.fetchall()
         conn.commit()
-        sql = 'insert into ' + record_table + ' values (' + str(num) + ', "' + str(date_time) + '");'
+        sql = 'update ' + record_table + ' set commit_date ="' + str(date_time) + \
+              '" where commit_id="' + social_media_schema + '";'
 
         try:
             cur.execute(sql)
@@ -256,31 +196,57 @@ def record_last_commit(num, timestamp):
         return result
 
 
-def data_producer(keyword, last_commit_timestamp, now_timestamp):
+def data_producer(keyword, last_commit_timestamp, now_timestamp, comprehend_conn, rds_conn):
     count = 0
     for subreddit in subreddit_list:
-        rows = extract_reddit_data(subreddit=subreddit, sort_type='score', sort='desc',
-                                  size=scrape_size, before=now_timestamp, after=last_commit_timestamp,
-                                  title=keyword, selftext=keyword)
-        count += rows
-        print("Commit: ", rows, "rows for keyword [" + keyword + "] from the recent day ")
+        rows = []
+        try:
+            response = fetchObjects(subreddit=subreddit, sort_type='score', sort='desc',
+                                      size=scrape_size, before=now_timestamp, after=last_commit_timestamp,
+                                      title=keyword, selftext=keyword)
+            if response.status_code == 200 and json.loads(response.text)['data']:
+                num = len(json.loads(response.text)['data'])
+                print('Find ', num, 'articles in ' + subreddit + 'to process')
+                data_handler(response, rows, '', keyword, comprehend_conn)
+                rds_handler(rows, rds_conn)
+                count += num
+                print("Commit: ", num, "rows for keyword [" + keyword + "] from the recent day ")
+        except:
+            print('API response fails')
     print("Total ", count, "rows committed for keyword[" + keyword + "]")
 
 def lambda_handler(event, context):
 
+    commit_conn = pymysql.connect(host=rds_host,
+                           user=rds_user,
+                           passwd=rds_password,
+                           db=event_schema,
+                           connect_timeout=5,
+                           cursorclass=pymysql.cursors.DictCursor)
+    comprehend_conn = boto3.client('comprehend')
+    rds_conn = pymysql.connect(host=rds_host,
+                               user=rds_user,
+                               passwd=rds_password,
+                               db=social_media_schema,
+                               connect_timeout=5,
+                               cursorclass=pymysql.cursors.DictCursor)
+
     # checkout the latest commitment (utc+0)
     now_date_time = datetime.datetime.utcnow()
     now_timestamp = get_timestamp(now_date_time)
-    commit_id, last_commit_date = get_last_commit()
+    last_commit_date = get_last_commit(commit_conn)
     last_commit_timestamp = get_timestamp(last_commit_date)
 
     # Go through every keyword in the list
-
-    # Time complexity O(KTLA), K # of keywords, T # of time period, L # of subreddits, A # of articles per time period
-    keywords = ['tesla', 'apple', 'google', 'amazon', 'yahoo', 'facebook', 'nvidia', 'gold', 'oil', 'GameStop']
-    # keywords = ['GameStop']
+    # keywords = ['tesla', 'apple', 'google', 'amazon', 'yahoo', 'facebook', 'nvidia', 'gold', 'oil', 'GameStop']
+    keywords = ['GameStop']
     for keyword in keywords:
-        data_producer(keyword, last_commit_timestamp, now_timestamp)
+        data_producer(keyword, last_commit_timestamp, now_timestamp, comprehend_conn, rds_conn)
+
     # record this commitment
-    record_last_commit(commit_id + 1, now_timestamp)
+    record_last_commit(commit_conn, now_timestamp)
+    # close all connections
+    commit_conn.close()
+    rds_conn.close()
+
 
