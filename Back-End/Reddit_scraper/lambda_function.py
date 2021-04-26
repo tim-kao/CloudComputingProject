@@ -16,8 +16,9 @@ data_list = ['id', 'full_link', 'author_fullname', 'title', 'num_comments', 'sco
 emotion_list = ['Happy', 'Angry', 'Surprise', 'Sad', 'Fear']
 subreddit_list = ['Trading', 'Daytrading', 'Forex', 'EliteTraders', 'finance', 'GlobalOffensiveTrade',
                   'stocks', 'StockMarket', 'algotrading', 'trading212', 'stock', 'invest', 'investing',
-                  'wallstreetbets', 'personalfinance']
-# subreddit_list = ['trading212', 'stock', 'invest', 'investing']
+                  'wallstreetbets', 'personalfinance', 'cryptocurrency', 'financialindependence', 'retirement',
+                   'povertyfinance', 'Bogleheads', 'PFtools', 'FinancialPlanning', 'Budget', 'fatFIRE',
+                   'realestateinvesting', 'MiddleClassFinance', 'passive_income']
 scrape_size = 100
 #subreddit_list = ['investing']
 # elasticsearch path
@@ -157,7 +158,7 @@ def rds_handler(rows, conn):
                 conn.commit()
 
             except:
-                print("duplicate PK, update row")
+                print("duplicate PK, skip row")
         cur.close()
 
 def get_last_commit(conn):
@@ -238,8 +239,8 @@ def lambda_handler(event, context):
     last_commit_timestamp = get_timestamp(last_commit_date)
 
     # Go through every keyword in the list
-    # keywords = ['tesla', 'apple', 'google', 'amazon', 'yahoo', 'facebook', 'nvidia', 'gold', 'oil', 'GameStop']
-    keywords = ['GameStop']
+    keywords = ['tesla', 'apple', 'google', 'amazon', 'yahoo', 'facebook', 'nvidia', 'gold', 'oil', 'GameStop']
+    # keywords = ['GameStop']
     for keyword in keywords:
         data_producer(keyword, last_commit_timestamp, now_timestamp, comprehend_conn, rds_conn)
 
@@ -248,5 +249,6 @@ def lambda_handler(event, context):
     # close all connections
     commit_conn.close()
     rds_conn.close()
+    print('Reddit database update done')
 
 
