@@ -83,10 +83,14 @@ def lambda_handler(event, context):
     rows = get_recent_date(reddit_conn, from_date, to_date)
     # rows is a dict of dict
     print(rows)
-
+    if not rows:
+        return
     # get google trend
     chk_time_interval = from_date.strftime("%Y-%m-%dT%H") + ' ' + to_date.strftime("%Y-%m-%dT%H")
-    popularity = google_search(rows.keys(), chk_time_interval)
+    items = list(rows.keys())
+    popularity = dict()
+    for i in range(0, len(items), 5):
+        popularity = {**popularity, **google_search(items[i: min(i + 5, len(items))], chk_time_interval)}
     print(popularity)
     # check subscription
     cursor = event_conn.cursor()
