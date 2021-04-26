@@ -18,7 +18,10 @@ subreddit_list = ['Trading', 'Daytrading', 'Forex', 'EliteTraders', 'finance', '
                   'stocks', 'StockMarket', 'algotrading', 'trading212', 'stock', 'invest', 'investing',
                   'wallstreetbets', 'personalfinance', 'cryptocurrency', 'financialindependence', 'retirement',
                    'povertyfinance', 'Bogleheads', 'PFtools', 'FinancialPlanning', 'Budget', 'fatFIRE',
-                   'realestateinvesting', 'MiddleClassFinance', 'passive_income']
+                   'realestateinvesting', 'MiddleClassFinance', 'passive_income',
+                    'AlgoTrading', 'PennyStocks', 'Options', 'CanadianInvestor', 'algorithmictrading',
+                  'ausstocks', 'dividends', 'InvestmentClub', 'quantfinance', 'quant', 'Stock_Picks',
+                  'SecurityAnalysis', 'UKInvesting', 'weedstocks']
 scrape_size = 100
 #subreddit_list = ['investing']
 # elasticsearch path
