@@ -8,6 +8,7 @@ endpoint = "cloudcomputingdb.cjzmmanfltlb.us-east-1.rds.amazonaws.com"
 username = "admin"
 passWord = "cloudcomputingteam14"
 event_db = "event"
+twitter_db = 'twitter'
 reddit_db = "reddit"
 record_table = 'commit'
 event_table = 'event_table'
@@ -44,9 +45,9 @@ def get_last_commit(conn):
     return date_time
 
 
-def get_recent_date(conn, from_date, to_date):
+def get_recent_date(conn, table, from_date, to_date):
     cursor = conn.cursor()  # connect database
-    sql_query = "select keyword, full_link," + \
+    sql_query = "select keyword, url," + \
                 "AVG(sentimentScore_Positive) as Positive, " + \
                 "AVG(sentimentScore_Negative) as Negative," + \
                 "AVG(sentimentScore_Neutral) as neutral, " + \
@@ -56,7 +57,7 @@ def get_recent_date(conn, from_date, to_date):
                 "AVG(emotion_Surprise) as surprise," + \
                 "AVG(emotion_Sad) as sad," + \
                 "AVG(emotion_Fear) as fear " + \
-                "FROM reddit where post_time between " + \
+                "FROM " + table + " where post_time between " + \
                  "('" + str(from_date) + "') and ('" + str(to_date) + \
                  "') group by keyword; "
     print(sql_query)
@@ -75,12 +76,15 @@ def get_recent_date(conn, from_date, to_date):
 def lambda_handler(event, context):
     event_conn = pymysql.connect(host=endpoint, user=username, password=passWord, db=event_db)
     reddit_conn = pymysql.connect(host=endpoint, user=username, password=passWord, db=reddit_db)
+    twitter_conn = pymysql.connect(host=endpoint, user=username, password=passWord, db=twitter_db)
     sms_conn = boto3.client('ses', region_name=region)
     # now_date_time = datetime.datetime.utcnow()
     # check between the last committed time and a day before it
     to_date = get_last_commit(event_conn)
     from_date = to_date - datetime.timedelta(days=1)
-    rows = get_recent_date(reddit_conn, from_date, to_date)
+    reddit_rows = get_recent_date(reddit_conn, reddit_db, from_date, to_date)
+    twitter_rows = get_recent_date(twitter_conn, twitter_db, from_date, to_date)
+    rows = {**twitter_rows, **reddit_rows}
     # rows is a dict of dict
     print(rows)
     if not rows:
